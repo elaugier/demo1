@@ -1,60 +1,117 @@
-import csv, random
+import csv
+import random
 import numpy
 import json
 import uuid
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch import Elasticsearch, RequestsHttpConnection, helpers
+from datetime import datetime
 
 host = "srvelk1.labs.local.lan"
 port = 9200
-es = Elasticsearch(hosts=[{'host':host, 'port':port}],connection_class=RequestsHttpConnection)
+es = Elasticsearch(hosts=[{'host': host, 'port': port}],
+                   connection_class=RequestsHttpConnection)
+idx_name = 'doleances'
+doc_type = 'vote'
 
-exprimes_non_exprimes = ["exprimes", "nesaispas", "nonexprimes"] 
-doleances = ["doleance_1", "doleance_2"]
+if not es.indices.exists(index=idx_name):
+    es.indices.create(idx_name)
+    mapping = {
+        "vote": {
+            "properties": {
+                "_timestamp": {
+                    "type": "date"
+                },
+                "uuid": {"type": "text",
+                         "fields": {
+                             "keyword": {
+                                 "type": "keyword",
+                                 "ignore_above": 256
+                             }
+                         }
+                         },
+                "ville": {"type": "text",
+                          "fields": {
+                              "keyword": {
+                                  "type": "keyword",
+                                  "ignore_above": 256
+                              }
+                          }},
+                "departement": {"type": "text",
+                                "fields": {
+                                    "keyword": {
+                                        "type": "keyword",
+                                        "ignore_above": 256
+                                    }
+                                }},
+                "doleance": {"type": "text",
+                             "fields": {
+                                 "keyword": {
+                                     "type": "keyword",
+                                     "ignore_above": 256
+                                 }
+                             }},
+                "vote_value": {"type": "text",
+                               "fields": {
+                                   "keyword": {
+                                       "type": "keyword",
+                                       "ignore_above": 256
+                                   }
+                               }},
+                "local_vote_id": {"type": "long"},
+                "location": {
+                    "type": "geo_point"
+                }
+            }
+        }
+    }
 
-n = 1
+    es.indices.put_mapping(index=idx_name, doc_type=doc_type, body=mapping)
 
-with open("villes_france.csv",mode= "r", encoding="utf-8") as csvfile:
-    villes = csv.DictReader(csvfile, delimiter=",", quotechar='"')
-    for ville in villes:
-        print("repartion des doleances pour la ville de ", ville["nom_reel"])
-        repart_doleance = numpy.random.dirichlet(numpy.ones(len(doleances)), size=1)
-        print( repart_doleance )
-        for dol in doleances:
-            #print("répartition exprimé/blanc/non exprimé pour doleance '", dol,"'")
-            repart_exp_on_dol = numpy.random.dirichlet(numpy.ones(len(exprimes_non_exprimes)), size=1) 
-            #print( repart_exp_on_dol )
-            #print("*************************************")
 
-            liste_votes = {}
-            nbexp = len(exprimes_non_exprimes)
-            for j in range(0, nbexp - 1):
-                explib = exprimes_non_exprimes[j]
-                exp = repart_exp_on_dol[0][j]
-                population = int(ville["population_2012"])
-                nbvotestogenerate = int(numpy.round(exp * population))
-                #print("nombre de votes à générer : ", nbvotestogenerate)
-                #print("*************************************")
+def gendata():
+    exprimes_non_exprimes = ["exprimes", "nesaispas", "nonexprimes"]
+    doleances = ["doleance_1", "doleance_2"]
+    with open("villes_france.csv", mode="r", encoding="utf-8") as csvfile:
+        villes = csv.DictReader(csvfile, delimiter=",", quotechar='"')
+        for ville in villes:
+            repart_doleance = numpy.random.dirichlet(
+                numpy.ones(len(doleances)), size=1)
+            nbdol = len(doleances)
+            d = 0
 
-                for i in range(1, nbvotestogenerate):
-                    vote = {
-                        "uuid": uuid.uuid4(),
-                        "ville": ville["nom_reel"],
-                        "departement": ville["departement"],
-                        "doleance": dol,
-                        "vote_value": explib,
-                        "location": {
-                            "lat": ville["latitude_deg"],
-                            "lon": ville["longitude_deg"]
+            for dol in range(0, nbdol):
+                repart_exp_on_dol = numpy.random.dirichlet(
+                    numpy.ones(len(exprimes_non_exprimes)), size=1)
+                nbexp = len(exprimes_non_exprimes)
+
+                for j in range(0, nbexp):
+                    explib = exprimes_non_exprimes[j]
+                    exp = repart_exp_on_dol[0][j]
+                    dolexp = repart_doleance[0][d]
+                    population = int(ville["population_2012"])
+                    nbvotestogenerate = int(
+                        numpy.round(dolexp * exp * population))
+
+                    for i in range(1, nbvotestogenerate):
+                        yield {
+                            "_index": idx_name,
+                            "_type": doc_type,
+                            "doc": {
+                                "_timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                                "uuid": uuid.uuid4(),
+                                "ville": ville["nom_reel"],
+                                "departement": ville["departement"],
+                                "doleance": dol,
+                                "vote_value": explib,
+                                "local_vote_id": i,
+                                "location": {
+                                    "lat": ville["latitude_deg"],
+                                    "lon": ville["longitude_deg"]
+                                }
+                            }
                         }
-                    }
-                    #print(vote)
-                    #print("_______")
-                    res = es.index(index="demo1",doc_type='vote',id = n, body=vote )
-                    #print(repr(res))
-                    n = n + 1
+
+                d = d + 1
 
 
-
-            
-        
-
+helpers.bulk(es, gendata())
