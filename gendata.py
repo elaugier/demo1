@@ -12,6 +12,7 @@ es = Elasticsearch(hosts=[{'host': host, 'port': port}],
                    connection_class=RequestsHttpConnection)
 idx_name = 'doleances'
 doc_type = 'vote'
+firsttime = True
 
 def gendata(idx_base, doc_type):
     ID = 0
@@ -43,7 +44,8 @@ def gendata(idx_base, doc_type):
 
                     for i in range(1, nbvotestogenerate):
                         ID = ID + 1
-                        if numpy.round(ID/1000000) > OLDPACKET:
+                        if numpy.round(ID/1000000) > OLDPACKET or firsttime:
+                            firsttime = Falseok
                             OLDPACKET = numpy.round(ID/1000000)
                             idx_name = idx_base + '-' + str(numpy.round(ID/1000000))
                             if not es.indices.exists(index=idx_name):
