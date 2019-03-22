@@ -13,62 +13,7 @@ es = Elasticsearch(hosts=[{'host': host, 'port': port}],
 idx_name = 'doleances'
 doc_type = 'vote'
 
-if not es.indices.exists(index=idx_name):
-    es.indices.create(idx_name)
-    mapping = {
-        "vote": {
-            "properties": {
-                "_timestamp": {
-                    "type": "date"
-                },
-                "uuid": {"type": "text",
-                         "fields": {
-                             "keyword": {
-                                 "type": "keyword",
-                                 "ignore_above": 256
-                             }
-                         }
-                         },
-                "ville": {"type": "text",
-                          "fields": {
-                              "keyword": {
-                                  "type": "keyword",
-                                  "ignore_above": 256
-                              }
-                          }},
-                "departement": {"type": "text",
-                                "fields": {
-                                    "keyword": {
-                                        "type": "keyword",
-                                        "ignore_above": 256
-                                    }
-                                }},
-                "doleance": {"type": "text",
-                             "fields": {
-                                 "keyword": {
-                                     "type": "keyword",
-                                     "ignore_above": 256
-                                 }
-                             }},
-                "vote_value": {"type": "text",
-                               "fields": {
-                                   "keyword": {
-                                       "type": "keyword",
-                                       "ignore_above": 256
-                                   }
-                               }},
-                "local_vote_id": {"type": "long"},
-                "location": {
-                    "type": "geo_point"
-                }
-            }
-        }
-    }
-
-    es.indices.put_mapping(index=idx_name, doc_type=doc_type, body=mapping)
-
-
-def gendata():
+def gendata(idx_base, doc_type):
     exprimes_non_exprimes = ["exprimes", "nesaispas", "nonexprimes"]
     doleances = ["doleance_1", "doleance_2","doleance_3"]
     with open("villes_france.csv", mode="r", encoding="utf-8") as csvfile:
@@ -92,6 +37,62 @@ def gendata():
                     nbvotestogenerate = int(
                         numpy.round(dolexp * exp * population))
 
+                    idx_name = idx_base + '-' + ville + '-'+ doleances[dol]
+
+                    if not es.indices.exists(index=idx_name):
+                        es.indices.create(idx_name)
+                        mapping = {
+                            "vote": {
+                                "properties": {
+                                    "_timestamp": {
+                                        "type": "date"
+                                    },
+                                    "uuid": {"type": "text",
+                                                "fields": {
+                                                    "keyword": {
+                                                        "type": "keyword",
+                                                        "ignore_above": 256
+                                                    }
+                                                }
+                                                },
+                                    "ville": {"type": "text",
+                                                "fields": {
+                                                    "keyword": {
+                                                        "type": "keyword",
+                                                        "ignore_above": 256
+                                                    }
+                                                }},
+                                    "departement": {"type": "text",
+                                                    "fields": {
+                                                        "keyword": {
+                                                            "type": "keyword",
+                                                            "ignore_above": 256
+                                                        }
+                                                    }},
+                                    "doleance": {"type": "text",
+                                                    "fields": {
+                                                        "keyword": {
+                                                            "type": "keyword",
+                                                            "ignore_above": 256
+                                                        }
+                                                    }},
+                                    "vote_value": {"type": "text",
+                                                    "fields": {
+                                                        "keyword": {
+                                                            "type": "keyword",
+                                                            "ignore_above": 256
+                                                        }
+                                                    }},
+                                    "local_vote_id": {"type": "long"},
+                                    "location": {
+                                        "type": "geo_point"
+                                    }
+                                }
+                            }
+                        }
+
+                        es.indices.put_mapping(index=idx_name, doc_type=doc_type, body=mapping)
+
                     for i in range(1, nbvotestogenerate):
                         yield {
                             "_index": idx_name,
@@ -113,4 +114,4 @@ def gendata():
                 d = d + 1
 
 
-helpers.bulk(es, gendata())
+helpers.bulk(es, gendata(idx_name, doc_type))
