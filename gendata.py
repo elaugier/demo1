@@ -14,6 +14,8 @@ idx_name = 'doleances'
 doc_type = 'vote'
 
 def gendata(idx_base, doc_type):
+    ID = 0
+    OLDPACKET = 0
     exprimes_non_exprimes = ["exprimes", "nesaispas", "nonexprimes"]
     doleances = ["doleance_1", "doleance_2","doleance_3"]
     with open("villes_france.csv", mode="r", encoding="utf-8") as csvfile:
@@ -37,63 +39,70 @@ def gendata(idx_base, doc_type):
                     nbvotestogenerate = int(
                         numpy.round(dolexp * exp * population))
 
-                    idx_name = idx_base + '-' + ville["slug"] + '-'+ doleances[dol]
 
-                    if not es.indices.exists(index=idx_name):
-                        es.indices.create(idx_name)
-                        mapping = {
-                            "vote": {
-                                "properties": {
-                                    "_timestamp": {
-                                        "type": "date"
-                                    },
-                                    "uuid": {"type": "text",
-                                                "fields": {
-                                                    "keyword": {
-                                                        "type": "keyword",
-                                                        "ignore_above": 256
-                                                    }
-                                                }
-                                                },
-                                    "ville": {"type": "text",
-                                                "fields": {
-                                                    "keyword": {
-                                                        "type": "keyword",
-                                                        "ignore_above": 256
-                                                    }
-                                                }},
-                                    "departement": {"type": "text",
-                                                    "fields": {
-                                                        "keyword": {
-                                                            "type": "keyword",
-                                                            "ignore_above": 256
-                                                        }
-                                                    }},
-                                    "doleance": {"type": "text",
-                                                    "fields": {
-                                                        "keyword": {
-                                                            "type": "keyword",
-                                                            "ignore_above": 256
-                                                        }
-                                                    }},
-                                    "vote_value": {"type": "text",
-                                                    "fields": {
-                                                        "keyword": {
-                                                            "type": "keyword",
-                                                            "ignore_above": 256
-                                                        }
-                                                    }},
-                                    "local_vote_id": {"type": "long"},
-                                    "location": {
-                                        "type": "geo_point"
-                                    }
-                                }
-                            }
-                        }
-
-                        es.indices.put_mapping(index=idx_name, doc_type=doc_type, body=mapping)
 
                     for i in range(1, nbvotestogenerate):
+                        ID = ID + 1
+                        if numpy.round(ID/1000000) > OLDPACKET:
+                            OLDPACKET = numpy.round(ID/1000000)
+                            idx_name = idx_base + '-' + str(numpy.round(ID/1000000))
+                            if not es.indices.exists(index=idx_name):
+                                es.indices.create(idx_name)
+                                mapping = {
+                                    "vote": {
+                                        "properties": {
+                                            "_timestamp": {
+                                                "type": "date"
+                                            },
+                                            "uuid": {"type": "text",
+                                                        "fields": {
+                                                            "keyword": {
+                                                                "type": "keyword",
+                                                                "ignore_above": 256
+                                                            }
+                                                        }
+                                                        },
+                                            "ville": {"type": "text",
+                                                        "fields": {
+                                                            "keyword": {
+                                                                "type": "keyword",
+                                                                "ignore_above": 256
+                                                            }
+                                                        }},
+                                            "departement": {"type": "text",
+                                                            "fields": {
+                                                                "keyword": {
+                                                                    "type": "keyword",
+                                                                    "ignore_above": 256
+                                                                }
+                                                            }},
+                                            "doleance": {"type": "text",
+                                                            "fields": {
+                                                                "keyword": {
+                                                                    "type": "keyword",
+                                                                    "ignore_above": 256
+                                                                }
+                                                            }},
+                                            "vote_value": {"type": "text",
+                                                            "fields": {
+                                                                "keyword": {
+                                                                    "type": "keyword",
+                                                                    "ignore_above": 256
+                                                                }
+                                                            }},
+                                            "local_vote_id": {"type": "long"},
+                                            "id": {"type": "long"},
+                                            "location": {
+                                                "type": "geo_point"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                es.indices.put_mapping(index=idx_name, doc_type=doc_type, body=mapping)
+
+
+
                         yield {
                             "_index": idx_name,
                             "_type": doc_type,
@@ -104,6 +113,7 @@ def gendata(idx_base, doc_type):
                             "doleance": doleances[dol],
                             "vote_value": explib,
                             "local_vote_id": i,
+                            "id": ID,
                             "location": {
                                 "lat": ville["latitude_deg"],
                                 "lon": ville["longitude_deg"]
