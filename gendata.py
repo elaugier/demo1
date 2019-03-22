@@ -96,7 +96,7 @@ def gendata():
                         yield {
                             "_index": idx_name,
                             "_type": doc_type,
-                            "_timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                            "timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                             "uuid": uuid.uuid4(),
                             "ville": ville["nom_reel"],
                             "departement": ville["departement"],
