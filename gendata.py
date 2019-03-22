@@ -70,7 +70,7 @@ if not es.indices.exists(index=idx_name):
 
 def gendata():
     exprimes_non_exprimes = ["exprimes", "nesaispas", "nonexprimes"]
-    doleances = ["doleance_1", "doleance_2"]
+    doleances = ["doleance_1", "doleance_2","doleance_3"]
     with open("villes_france.csv", mode="r", encoding="utf-8") as csvfile:
         villes = csv.DictReader(csvfile, delimiter=",", quotechar='"')
         for ville in villes:
@@ -96,19 +96,18 @@ def gendata():
                         yield {
                             "_index": idx_name,
                             "_type": doc_type,
-                            "doc": {
-                                "_timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                                "uuid": uuid.uuid4(),
-                                "ville": ville["nom_reel"],
-                                "departement": ville["departement"],
-                                "doleance": dol,
-                                "vote_value": explib,
-                                "local_vote_id": i,
-                                "location": {
-                                    "lat": ville["latitude_deg"],
-                                    "lon": ville["longitude_deg"]
-                                }
+                            "_timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                            "uuid": uuid.uuid4(),
+                            "ville": ville["nom_reel"],
+                            "departement": ville["departement"],
+                            "doleance": doleances[dol],
+                            "vote_value": explib,
+                            "local_vote_id": i,
+                            "location": {
+                                "lat": ville["latitude_deg"],
+                                "lon": ville["longitude_deg"]
                             }
+
                         }
 
                 d = d + 1
