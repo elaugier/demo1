@@ -37,7 +37,7 @@ def gendata(idx_base, doc_type):
                     nbvotestogenerate = int(
                         numpy.round(dolexp * exp * population))
 
-                    idx_name = idx_base + '-' + ville + '-'+ doleances[dol]
+                    idx_name = idx_base + '-' + ville["slug"] + '-'+ doleances[dol]
 
                     if not es.indices.exists(index=idx_name):
                         es.indices.create(idx_name)
