@@ -94,7 +94,7 @@ def gendata(idx_base, doc_type):
                                                                 }
                                                             }},
                                             "local_vote_id": {"type": "long"},
-                                            "id": {"type": "long"},
+                                            "unique_id": {"type": "long"},
                                             "location": {
                                                 "type": "geo_point"
                                             }
@@ -116,7 +116,7 @@ def gendata(idx_base, doc_type):
                             "doleance": doleances[dol],
                             "vote_value": explib,
                             "local_vote_id": i,
-                            "id": ID,
+                            "unique_id": ID,
                             "location": {
                                 "lat": ville["latitude_deg"],
                                 "lon": ville["longitude_deg"]
